@@ -5452,7 +5452,7 @@ def salvar_arquivo_enviado(identificador, tdata_path=None, session_path=None):
             'session_path': session_path,
             'timestamp': time.time(),
             'data_hora': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-        }
+       }
         
         # Garante que o diretório existe
         os.makedirs(os.path.dirname(arquivos_enviados_file), exist_ok=True)
