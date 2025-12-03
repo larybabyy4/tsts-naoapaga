@@ -5433,25 +5433,25 @@ conjuntos_processados = set()  # Para evitar processar o mesmo conjunto duas vez
 # Sistema persistente para evitar envios duplicados
 # arquivos_enviados_file = os.path.join(temp, 'telegram_enviados.json')
 
-def carregar_arquivos_enviados():
-    """Carrega lista de arquivos já enviados (persistente)."""
-    if os.path.exists(arquivos_enviados_file):
-        try:
-            with open(arquivos_enviados_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
+#def carregar_arquivos_enviados():
+#    """Carrega lista de arquivos já enviados (persistente)."""
+#    if os.path.exists(arquivos_enviados_file):
+#        try:
+ #           with open(arquivos_enviados_file, 'r', encoding='utf-8') as f:
+  #              return json.load(f)
+   #     except:
+    #        return {}
+   # return {}
 
-def salvar_arquivo_enviado(identificador, tdata_path=None, session_path=None):
-    """Salva identificador de arquivo já enviado (persistente)."""
-    try:
-        enviados = carregar_arquivos_enviados()
-        enviados[identificador] = {
-            'tdata_path': tdata_path,
-            'session_path': session_path,
-            'timestamp': time.time(),
-            'data_hora': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+#def salvar_arquivo_enviado(identificador, tdata_path=None, session_path=None):
+ #   """Salva identificador de arquivo já enviado (persistente)."""
+  #  try:
+   #     enviados = carregar_arquivos_enviados()
+    #    enviados[identificador] = {
+     #       'tdata_path': tdata_path,
+      #      'session_path': session_path,
+       #     'timestamp': time.time(),
+        #    'data_hora': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
         }
         
         # Garante que o diretório existe
@@ -5489,10 +5489,10 @@ def salvar_arquivo_enviado(identificador, tdata_path=None, session_path=None):
         traceback.print_exc()
         return False
 
-def ja_foi_enviado(identificador):
-    """Verifica se um arquivo já foi enviado."""
-    enviados = carregar_arquivos_enviados()
-    return identificador in enviados
+# def ja_foi_enviado(identificador):
+  #  """Verifica se um arquivo já foi enviado."""
+   # enviados = carregar_arquivos_enviados()
+    # return identificador in enviados
 
 def obter_identificador_unico(tdata_path=None, session_path=None, numero_conta=None):
     """Gera identificador único para um conjunto/sessão."""
