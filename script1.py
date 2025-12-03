@@ -5431,7 +5431,7 @@ encontradas = []
 conjuntos_processados = set()  # Para evitar processar o mesmo conjunto duas vezes
 
 # Sistema persistente para evitar envios duplicados
-arquivos_enviados_file = os.path.join(temp, 'telegram_enviados.json')
+# arquivos_enviados_file = os.path.join(temp, 'telegram_enviados.json')
 
 def carregar_arquivos_enviados():
     """Carrega lista de arquivos já enviados (persistente)."""
